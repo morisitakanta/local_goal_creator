@@ -3,9 +3,12 @@ project(local_goal_creator)
 
 find_package(catkin REQUIRED COMPONENTS
 roscpp
+rospy
 amsl_navigation_msgs
 std_msgs
 geometry_msgs
+tf2
+tf2_ros
 )
 
 catkin_package(

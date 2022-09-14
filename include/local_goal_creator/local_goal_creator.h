@@ -11,6 +11,9 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <tf/transform_datatypes.h>
 
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+
 class LocalGoalCreator
 {
     public:
@@ -35,6 +38,7 @@ class LocalGoalCreator
         int goal_node_;
         double local_goal_interval_;
         double pass_through_radius_;
+        std::string local_goal_frame_id_;
 
         // other params
         bool checkpoint_received_;
@@ -49,6 +53,7 @@ class LocalGoalCreator
         std::vector<geometry_msgs::PoseStamped> local_goal_poses_;
         int local_goal_index_;
         geometry_msgs::PoseStamped local_goal_;
+        geometry_msgs::PoseStamped local_goal_base_link_;
 
         // ros
         ros::NodeHandle nh_;
@@ -57,6 +62,10 @@ class LocalGoalCreator
         ros::Subscriber node_edge_sub_;
         ros::Subscriber current_pose_sub_;
         ros::Publisher local_goal_pub_;
+
+        // tf
+        tf2_ros::Buffer tf_buffer_;
+        tf2_ros::TransformListener *tf_listener_;
 };
 
 #endif // __LOCAL_GOAL_CREATOR_H__
