@@ -14,6 +14,7 @@ LocalGoalCreator::LocalGoalCreator() : nh_(),
     node_edge_sub_ = nh_.subscribe("/node_edge_map", 1, &LocalGoalCreator::node_edge_callback, this);
     current_pose_sub_ = nh_.subscribe("/current_pose", 1, &LocalGoalCreator::current_pose_callback, this);
     local_goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/local_goal", 1);
+    current_checkpoint_id_pub_ = nh_.advertise<std_msgs::Int32>("/current_checkpoint", 1);
 
     checkpoint_received_ = false;
     node_edge_map_received_ = false;
@@ -107,7 +108,7 @@ void LocalGoalCreator::get_node2node_poses(int node0_id, int node1_id, std::vect
 
         ROS_INFO("node2node_pose: %f, %f", node2node_pose.pose.position.x, node2node_pose.pose.position.y);
 
-        if(node2node_poses.size() > 1e6)
+        if (node2node_poses.size() > 1e6)
             break;
 
         if (sqrt(pow(node2node_pose.pose.position.x - node1_pos.x, 2) + pow(node2node_pose.pose.position.y - node1_pos.y, 2)) < local_goal_interval_)
@@ -155,11 +156,13 @@ geometry_msgs::PoseStamped LocalGoalCreator::get_local_goal(std::vector<geometry
     local_goal.pose.position.z = 0;
     local_goal.pose.orientation = node2node_poses[poses_index].pose.orientation;
 
-    try{
+    try
+    {
         tf_buffer_.transform(local_goal, local_goal_base_link_, local_goal_frame_id_, ros::Duration(0.1));
     }
-    catch (tf2::TransformException &ex) {
-        ROS_WARN("%s",ex.what());
+    catch (tf2::TransformException &ex)
+    {
+        ROS_WARN("%s", ex.what());
     }
     return local_goal;
 }
@@ -190,18 +193,18 @@ void LocalGoalCreator::process()
     {
         if (checkpoint_received_ && node_edge_map_received_ && current_pose_updated_)
         {
-            ROS_INFO("========================================");
-            ROS_INFO("current_checkpoint_id: %d", current_checkpoint_id_);
-            ROS_INFO("next_checkpoint_id: %d", next_checkpoint_id_);
-            ROS_INFO("current_pose: (%f, %f)", current_pose_.pose.position.x, current_pose_.pose.position.y);
-            ROS_INFO("local_goal: (%f, %f)", local_goal_.pose.position.x, local_goal_.pose.position.y);
-            ROS_INFO("local_goal_index: %d", local_goal_index_);
-            ROS_INFO("local_goal_poses.size(): %d", (int)local_goal_poses_.size());
+            // ROS_INFO("========================================");
+            // ROS_INFO("current_checkpoint_id: %d", current_checkpoint_id_);
+            // ROS_INFO("next_checkpoint_id: %d", next_checkpoint_id_);
+            // ROS_INFO("current_pose: (%f, %f)", current_pose_.pose.position.x, current_pose_.pose.position.y);
+            // ROS_INFO("local_goal: (%f, %f)", local_goal_.pose.position.x, local_goal_.pose.position.y);
+            // ROS_INFO("local_goal_index: %d", local_goal_index_);
+            // ROS_INFO("local_goal_poses.size(): %d", (int)local_goal_poses_.size());
 
-            if(reached_goal(goal_node_, current_pose_) && checkpoint_.data.size() == 0)
+            if (reached_goal(goal_node_, current_pose_) && checkpoint_.data.size() == 0)
             {
                 ROS_INFO("reached_goal");
-                return;
+                break;
             }
 
             if (local_goal_poses_.size() == 0)
@@ -235,9 +238,13 @@ void LocalGoalCreator::process()
             {
                 local_goal_ = get_local_goal(local_goal_poses_, local_goal_index_, current_pose_);
             }
-            // local_goal_pub_.publish(local_goal_);
+            // local_goal_pub_.publish(local_goal_); // frame_id: map
             local_goal_pub_.publish(local_goal_base_link_);
             current_pose_updated_ = false;
+
+            std_msgs::Int32 current_checkpoint_id_msg;
+            current_checkpoint_id_msg.data = current_checkpoint_id_;
+            current_checkpoint_id_pub_.publish(current_checkpoint_id_msg);
         }
 
         ros::spinOnce();

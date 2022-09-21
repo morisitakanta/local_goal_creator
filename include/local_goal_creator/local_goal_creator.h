@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <std_msgs/Int32MultiArray.h>
+#include <std_msgs/Int32.h>
 #include "amsl_navigation_msgs/NodeEdgeMap.h"
 #include "amsl_navigation_msgs/Node.h"
 #include "amsl_navigation_msgs/Edge.h"
@@ -31,6 +32,7 @@ class LocalGoalCreator
         bool reached_checkpoint(int next_checkpoint_id, geometry_msgs::PoseStamped current_pose);
         geometry_msgs::PoseStamped get_local_goal(std::vector<geometry_msgs::PoseStamped> &node2node_poses, int &poses_index, geometry_msgs::PoseStamped current_pose);
         bool reached_goal(int goal_node_id, geometry_msgs::PoseStamped current_pose);
+        bool is_stop_node(int node_id, std::vector<int> &stop_node_id_list);
 
         // private params
         int hz_;
@@ -62,6 +64,7 @@ class LocalGoalCreator
         ros::Subscriber node_edge_sub_;
         ros::Subscriber current_pose_sub_;
         ros::Publisher local_goal_pub_;
+        ros::Publisher current_checkpoint_id_pub_;
 
         // tf
         tf2_ros::Buffer tf_buffer_;
