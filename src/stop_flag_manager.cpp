@@ -40,17 +40,10 @@ void StopFlagManager::get_stop_node_id_list(XmlRpc::XmlRpcValue &stop_list, std:
 
 bool StopFlagManager::is_stop_node(int node_id)
 {
-    if (current_node_received_ == true)
+    current_node_received_ = false;
+    if (find(stop_node_id_list_.begin(), stop_node_id_list_.end(), node_id) != stop_node_id_list_.end())
     {
-        current_node_received_ = false;
-        if (find(stop_node_id_list_.begin(), stop_node_id_list_.end(), node_id) != stop_node_id_list_.end())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return true;
     }
     else
     {
@@ -60,17 +53,14 @@ bool StopFlagManager::is_stop_node(int node_id)
 
 bool StopFlagManager::get_go_signal(sensor_msgs::Joy &joy)
 {
-    if (joy_received_ == true)
+    if(joy_received_ == false)
     {
-        joy_received_ = false;
-        if (joy.buttons[0] == 1)
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return false;
+    }
+
+    if (joy.buttons[11] == 1 && joy.buttons[12] == 1)
+    {
+        return true;
     }
     else
     {
@@ -83,34 +73,39 @@ void StopFlagManager::process()
     ros::Rate loop_rate(hz_);
     while (ros::ok())
     {
-        bool stop_node_flag = is_stop_node(current_node_);
-        bool go_signal_flag = get_go_signal(joy_);
-        if (stop_node_flag)
+        if (current_node_received_)
         {
-            if (go_signal_flag)
+            bool stop_node_flag = is_stop_node(current_node_);
+            bool go_signal_flag = get_go_signal(joy_);
+            if (stop_node_flag)
             {
-                std::vector<int>::iterator it = find(stop_node_id_list_.begin(), stop_node_id_list_.end(), current_node_);
-                stop_node_id_list_.erase(it);
-                for (int i = 0; i < stop_node_id_list_.size(); i++)
-                    ROS_INFO("stop_node_id: %d", stop_node_id_list_[i]);
-                ROS_WARN("stop_node_id_list_: %d", (int)stop_node_id_list_.size());
+                if (go_signal_flag)
+                {
+                    std::vector<int>::iterator it = find(stop_node_id_list_.begin(), stop_node_id_list_.end(), current_node_);
+                    stop_node_id_list_.erase(it);
+                    for (int i = 0; i < stop_node_id_list_.size(); i++)
+                        ROS_INFO("stop_node_id: %d", stop_node_id_list_[i]);
+                    ROS_WARN("stop_node_id_list_: %d", (int)stop_node_id_list_.size());
 
+                    std_msgs::Bool stop_flag_msg;
+                    stop_flag_msg.data = false;
+                    stop_flag_pub_.publish(stop_flag_msg);
+                    ros::spinOnce();
+                    loop_rate.sleep();
+                    continue;
+                }
+                std_msgs::Bool stop_flag_msg;
+                stop_flag_msg.data = true;
+                stop_flag_pub_.publish(stop_flag_msg);
+            }
+            else
+            {
                 std_msgs::Bool stop_flag_msg;
                 stop_flag_msg.data = false;
                 stop_flag_pub_.publish(stop_flag_msg);
-                ros::spinOnce();
-                loop_rate.sleep();
-                continue;
             }
-            std_msgs::Bool stop_flag_msg;
-            stop_flag_msg.data = true;
-            stop_flag_pub_.publish(stop_flag_msg);
-        }
-        else
-        {
-            std_msgs::Bool stop_flag_msg;
-            stop_flag_msg.data = false;
-            stop_flag_pub_.publish(stop_flag_msg);
+            current_node_received_ = false;
+            joy_received_ = false;
         }
 
         ros::spinOnce();
