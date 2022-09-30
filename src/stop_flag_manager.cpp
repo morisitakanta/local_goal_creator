@@ -8,6 +8,7 @@ StopFlagManager::StopFlagManager() : nh_(), private_nh_("~")
     current_node_sub_ = nh_.subscribe("/current_node", 1, &StopFlagManager::current_node_callback, this);
     joy_sub_ = nh_.subscribe("/joy", 1, &StopFlagManager::joy_callback, this);
     stop_flag_pub_ = nh_.advertise<std_msgs::Bool>("/stop_flag", 1);
+    stop_node_id_list_pub_ = nh_.advertise<std_msgs::Int32MultiArray>("/stop_node_id_list", 1);
 
     get_stop_node_id_list(stop_list_, stop_node_id_list_);
     current_node_received_ = false;
@@ -107,6 +108,9 @@ void StopFlagManager::process()
             current_node_received_ = false;
             joy_received_ = false;
         }
+        std_msgs::Int32MultiArray stop_node_id_list_msg;
+        for(auto &node_id : stop_node_id_list_) stop_node_id_list_msg.data.push_back(node_id);
+        stop_node_id_list_pub_.publish(stop_node_id_list_msg);
 
         ros::spinOnce();
         loop_rate.sleep();

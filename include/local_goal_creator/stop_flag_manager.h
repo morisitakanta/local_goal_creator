@@ -4,6 +4,7 @@
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <sensor_msgs/Joy.h>
 
 class StopFlagManager
@@ -40,6 +41,7 @@ class StopFlagManager
         ros::Subscriber current_node_sub_;
         ros::Subscriber joy_sub_;
         ros::Publisher stop_flag_pub_;
+        ros::Publisher stop_node_id_list_pub_;
 };
 
 #endif // __STOP_FLAG_MANAGER_H__
