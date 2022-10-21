@@ -42,7 +42,9 @@ void StopFlagManager::get_stop_node_id_list(XmlRpc::XmlRpcValue &stop_list, std:
 bool StopFlagManager::is_stop_node(int node_id)
 {
     current_node_received_ = false;
-    if (find(stop_node_id_list_.begin(), stop_node_id_list_.end(), node_id) != stop_node_id_list_.end())
+    if (stop_node_id_list_.size() == 0) return false;
+    // if (find(stop_node_id_list_.begin(), stop_node_id_list_.end(), node_id) != stop_node_id_list_.end())
+    if(stop_node_id_list_[0] == node_id)
     {
         return true;
     }
@@ -82,8 +84,9 @@ void StopFlagManager::process()
             {
                 if (go_signal_flag)
                 {
-                    std::vector<int>::iterator it = find(stop_node_id_list_.begin(), stop_node_id_list_.end(), current_node_);
-                    stop_node_id_list_.erase(it);
+                    // std::vector<int>::iterator it = find(stop_node_id_list_.begin(), stop_node_id_list_.end(), current_node_);
+                    // stop_node_id_list_.erase(it);
+                    stop_node_id_list_.erase(stop_node_id_list_.begin());
                     for (int i = 0; i < stop_node_id_list_.size(); i++)
                         ROS_INFO("stop_node_id: %d", stop_node_id_list_[i]);
                     ROS_WARN("stop_node_id_list_: %d", (int)stop_node_id_list_.size());
@@ -91,19 +94,13 @@ void StopFlagManager::process()
                     std_msgs::Bool stop_flag_msg;
                     stop_flag_msg.data = false;
                     stop_flag_pub_.publish(stop_flag_msg);
-                    ros::spinOnce();
-                    loop_rate.sleep();
-                    continue;
                 }
-                std_msgs::Bool stop_flag_msg;
-                stop_flag_msg.data = true;
-                stop_flag_pub_.publish(stop_flag_msg);
-            }
-            else
-            {
-                std_msgs::Bool stop_flag_msg;
-                stop_flag_msg.data = false;
-                stop_flag_pub_.publish(stop_flag_msg);
+                else
+                {
+                    std_msgs::Bool stop_flag_msg;
+                    stop_flag_msg.data = true;
+                    stop_flag_pub_.publish(stop_flag_msg);
+                }
             }
             current_node_received_ = false;
             joy_received_ = false;

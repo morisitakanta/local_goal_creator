@@ -140,7 +140,8 @@ bool LocalGoalCreator::reached_checkpoint(int next_checkpoint_id, geometry_msgs:
     // ROS_INFO("current_pose_x: %f current_pose_y: %f", current_pose.pose.position.x, current_pose.pose.position.y);
     // ROS_INFO("------------------------------------");
 
-    if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < pass_through_radius_)
+    if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < 1.0)
+    // if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < pass_through_radius_)
         return true;
     else
         return false;
