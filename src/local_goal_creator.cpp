@@ -19,6 +19,7 @@ LocalGoalCreator::LocalGoalCreator() : nh_(),
     current_checkpoint_id_pub_ = nh_.advertise<std_msgs::Int32>("/current_checkpoint", 1);
 
     checkpoint_received_ = false;
+    stop_node_id_list_received_ = false;
     node_edge_map_received_ = false;
     current_pose_updated_ = false;
     current_checkpoint_id_ = start_node_;
@@ -85,9 +86,14 @@ void LocalGoalCreator::current_pose_callback(const geometry_msgs::PoseWithCovari
 
 void LocalGoalCreator::stop_node_id_list_callback(const std_msgs::Int32MultiArray::ConstPtr &msg)
 {
+    if(!stop_node_id_list_received_)
+    {
+        for (auto &stop_node_id : msg->data)
+            stop_node_id_list_.push_back(stop_node_id);
+
+        stop_node_id_list_received_ = true;
+    }
     // ROS_INFO("stop_node_id_list_callback");
-    for (auto &stop_node_id : msg->data)
-        stop_node_id_list_.push_back(stop_node_id);
 }
 
 void LocalGoalCreator::get_node2node_poses(int node0_id, int node1_id, std::vector<geometry_msgs::PoseStamped> &node2node_poses)
@@ -219,7 +225,7 @@ void LocalGoalCreator::process()
     ros::Rate rate(hz_);
     while (ros::ok())
     {
-        if (checkpoint_received_ && node_edge_map_received_ && current_pose_updated_)
+        if (checkpoint_received_ && stop_node_id_list_received_ && node_edge_map_received_ && current_pose_updated_)
         {
             // ROS_INFO("========================================");
             // ROS_INFO("current_checkpoint_id: %d", current_checkpoint_id_);

@@ -46,6 +46,7 @@ class LocalGoalCreator
 
         // other params
         bool checkpoint_received_;
+        bool stop_node_id_list_received_;
         bool node_edge_map_received_;
         bool current_pose_updated_;
         std_msgs::Int32MultiArray checkpoint_;
