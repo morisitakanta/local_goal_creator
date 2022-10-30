@@ -30,7 +30,7 @@ class LocalGoalCreator
 
         // other functions
         void get_node2node_poses(int node0_id, int node1_id, std::vector<geometry_msgs::PoseStamped>& node2node_poses);
-        bool reached_checkpoint(int next_checkpoint_id, geometry_msgs::PoseStamped current_pose);
+        bool reached_checkpoint(int current_checkpoint_id_, int next_checkpoint_id, int one_more_ahead_checkpoint_id, geometry_msgs::PoseStamped current_pose);
         geometry_msgs::PoseStamped get_local_goal(std::vector<geometry_msgs::PoseStamped> &node2node_poses, int &poses_index, geometry_msgs::PoseStamped current_pose);
         bool reached_goal(int goal_node_id, geometry_msgs::PoseStamped current_pose);
         bool reached_stop_node(int next_node_id, std::vector<int> &stop_node_id_list, geometry_msgs::PoseStamped current_pose);
@@ -54,6 +54,7 @@ class LocalGoalCreator
         geometry_msgs::PoseStamped current_pose_;
         int current_checkpoint_id_;
         int next_checkpoint_id_;
+        int one_more_ahead_checkpoint_id_;
         std::vector<int> node_id_list_;
         std::vector<geometry_msgs::PoseStamped> local_goal_poses_;
         int local_goal_index_;

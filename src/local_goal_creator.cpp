@@ -45,8 +45,10 @@ void LocalGoalCreator::checkpoint_callback(const std_msgs::Int32MultiArray::Cons
             {
                 checkpoint_.data.erase(checkpoint_.data.begin());
                 next_checkpoint_id_ = checkpoint_.data[0];
+                one_more_ahead_checkpoint_id_ = checkpoint_.data[1];
                 ROS_INFO("current_checkpoint_id_ : %d", current_checkpoint_id_);
                 ROS_INFO("next_checkpoint_id_ : %d", next_checkpoint_id_);
+                ROS_INFO("one_more_ahead_checkpoint_id_ : %d", one_more_ahead_checkpoint_id_);
                 ROS_INFO("checkpoint_.data.size() : %d", (int)checkpoint_.data.size());
             }
         }
@@ -133,21 +135,36 @@ void LocalGoalCreator::get_node2node_poses(int node0_id, int node1_id, std::vect
     // ROS_INFO("------------------------------------");
 }
 
-bool LocalGoalCreator::reached_checkpoint(int next_checkpoint_id, geometry_msgs::PoseStamped current_pose)
+bool LocalGoalCreator::reached_checkpoint(int current_checkpoint_id, int next_checkpoint_id, int one_more_ahead_checkpoint_id, geometry_msgs::PoseStamped current_pose)
 {
     // ROS_INFO("------------------------------------");
     // ROS_INFO("reached_checkpoint");
-    int checkpoint_idx = find(node_id_list_.begin(), node_id_list_.end(), next_checkpoint_id) - node_id_list_.begin();
-    double checkpoint_x = node_edge_map_.nodes[checkpoint_idx].point.x;
-    double checkpoint_y = node_edge_map_.nodes[checkpoint_idx].point.y;
+    int current_checkpoint_idx = find(node_id_list_.begin(), node_id_list_.end(), current_checkpoint_id) - node_id_list_.begin();
+    double current_checkpoint_x = node_edge_map_.nodes[current_checkpoint_idx].point.x;
+    double current_checkpoint_y = node_edge_map_.nodes[current_checkpoint_idx].point.y;
 
+    int next_checkpoint_idx = find(node_id_list_.begin(), node_id_list_.end(), next_checkpoint_id) - node_id_list_.begin();
+    double next_checkpoint_x = node_edge_map_.nodes[next_checkpoint_idx].point.x;
+    double next_checkpoint_y = node_edge_map_.nodes[next_checkpoint_idx].point.y;
+
+    int one_more_ahead_checkpoint_idx = find(node_id_list_.begin(), node_id_list_.end(), one_more_ahead_checkpoint_id) - node_id_list_.begin();
+    double one_more_ahead_checkpoint_x = node_edge_map_.nodes[one_more_ahead_checkpoint_idx].point.x;
+    double one_more_ahead_checkpoint_y = node_edge_map_.nodes[one_more_ahead_checkpoint_idx].point.y;
+
+    double next2current_distance = sqrt(pow(current_checkpoint_x - next_checkpoint_x, 2) + pow(current_checkpoint_y - next_checkpoint_y, 2));
+    double next2one_more_ahead_distance = sqrt(pow(one_more_ahead_checkpoint_x - next_checkpoint_x, 2) + pow(one_more_ahead_checkpoint_y - next_checkpoint_y, 2));
+    double product = (current_checkpoint_x - next_checkpoint_x) * (one_more_ahead_checkpoint_x - next_checkpoint_x) + (current_checkpoint_y - next_checkpoint_y) * (one_more_ahead_checkpoint_y - next_checkpoint_y);
+    double cos_theta = product / (next2current_distance * next2one_more_ahead_distance);
+
+    double normalized_diff = 1.0 - (cos_theta + 1.0) / 2.0;
+    normalized_diff = normalized_diff * 2.0;
+    double threshold = stop_radius_min_ + (local_goal_dist_ - stop_radius_min_) * std::min(normalized_diff, 1.0);
     // ROS_INFO("next_checkpoint_id: %d", next_checkpoint_id);
     // ROS_INFO("checkpoint_x: %f checkpoint_y: %f", checkpoint_x, checkpoint_y);
     // ROS_INFO("current_pose_x: %f current_pose_y: %f", current_pose.pose.position.x, current_pose.pose.position.y);
     // ROS_INFO("------------------------------------");
 
-    if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < 1.0)
-    // if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < local_goal_dist_)
+    if (sqrt(pow(current_pose.pose.position.x - next_checkpoint_x, 2) + pow(current_pose.pose.position.y - next_checkpoint_y, 2)) < threshold) //TODO
         return true;
     else
         return false;
@@ -244,7 +261,7 @@ void LocalGoalCreator::process()
             if (local_goal_poses_.size() == 0)
                 get_node2node_poses(current_checkpoint_id_, next_checkpoint_id_, local_goal_poses_);
 
-            if (reached_checkpoint(next_checkpoint_id_, current_pose_) && reached_stop_node(next_checkpoint_id_, stop_node_id_list_, current_pose_))
+            if (reached_checkpoint(current_checkpoint_id_, next_checkpoint_id_, one_more_ahead_checkpoint_id_, current_pose_) && reached_stop_node(next_checkpoint_id_, stop_node_id_list_, current_pose_))
             {
                 ROS_WARN("reached_checkpoint");
                 // if (checkpoint_.data.size() == 0)
@@ -253,7 +270,8 @@ void LocalGoalCreator::process()
                 // }
                 local_goal_index_ = 0;
                 current_checkpoint_id_ = next_checkpoint_id_;
-                next_checkpoint_id_ = checkpoint_.data[0];
+                next_checkpoint_id_ = checkpoint_.data.size() > 0 ? checkpoint_.data[0] : goal_node_;
+                one_more_ahead_checkpoint_id_ = checkpoint_.data.size() > 1 ? checkpoint_.data[1] : goal_node_;
                 while (current_checkpoint_id_ == next_checkpoint_id_)
                 {
                     checkpoint_.data.erase(checkpoint_.data.begin());
