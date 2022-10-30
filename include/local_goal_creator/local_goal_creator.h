@@ -40,8 +40,8 @@ class LocalGoalCreator
         int start_node_;
         int goal_node_;
         double local_goal_interval_;
-        double pass_through_radius_;
-        double stop_node_radius_;
+        double local_goal_dist_;
+        double stop_radius_min_;
         std::string local_goal_frame_id_;
 
         // other params

@@ -7,8 +7,8 @@ LocalGoalCreator::LocalGoalCreator() : nh_(),
     private_nh_.param("start_node", start_node_, 0);
     private_nh_.param("goal_node", goal_node_, 1);
     private_nh_.param("local_goal_interval", local_goal_interval_, 1.0);
-    private_nh_.param("pass_through_radius", pass_through_radius_, 5.0);
-    private_nh_.param("stop_node_radius", stop_node_radius_, 0.5);
+    private_nh_.param("local_goal_dist", local_goal_dist_, 5.0);
+    private_nh_.param("stop_radius_min", stop_radius_min_, 0.5);
     private_nh_.param("local_goal_frame_id", local_goal_frame_id_, std::string("base_link"));
 
     checkpoint_sub_ = nh_.subscribe("/checkpoint", 1, &LocalGoalCreator::checkpoint_callback, this);
@@ -147,7 +147,7 @@ bool LocalGoalCreator::reached_checkpoint(int next_checkpoint_id, geometry_msgs:
     // ROS_INFO("------------------------------------");
 
     if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < 1.0)
-    // if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < pass_through_radius_)
+    // if (sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < local_goal_dist_)
         return true;
     else
         return false;
@@ -158,7 +158,7 @@ geometry_msgs::PoseStamped LocalGoalCreator::get_local_goal(std::vector<geometry
     // ROS_INFO("get_local_goal");
     double current_local_goal_x = node2node_poses[poses_index].pose.position.x;
     double current_local_goal_y = node2node_poses[poses_index].pose.position.y;
-    if (sqrt(pow(current_pose.pose.position.x - current_local_goal_x, 2) + pow(current_pose.pose.position.y - current_local_goal_y, 2)) < pass_through_radius_)
+    if (sqrt(pow(current_pose.pose.position.x - current_local_goal_x, 2) + pow(current_pose.pose.position.y - current_local_goal_y, 2)) < local_goal_dist_)
     {
         poses_index++;
         if (poses_index >= node2node_poses.size())
@@ -196,7 +196,7 @@ bool LocalGoalCreator::reached_goal(int goal_node_id, geometry_msgs::PoseStamped
     // ROS_INFO("current_pose_x: %f current_pose_y: %f", current_pose.pose.position.x, current_pose.pose.position.y);
     // ROS_INFO("------------------------------------");
 
-    if (sqrt(pow(current_pose.pose.position.x - goal_x, 2) + pow(current_pose.pose.position.y - goal_y, 2)) < pass_through_radius_)
+    if (sqrt(pow(current_pose.pose.position.x - goal_x, 2) + pow(current_pose.pose.position.y - goal_y, 2)) < local_goal_dist_)
         return true;
     else
         return false;
@@ -211,7 +211,7 @@ bool LocalGoalCreator::reached_stop_node(int next_node_id, std::vector<int> &sto
         double checkpoint_x = node_edge_map_.nodes[checkpoint_idx].point.x;
         double checkpoint_y = node_edge_map_.nodes[checkpoint_idx].point.y;
 
-        if(sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < stop_node_radius_)
+        if(sqrt(pow(current_pose.pose.position.x - checkpoint_x, 2) + pow(current_pose.pose.position.y - checkpoint_y, 2)) < stop_radius_min_)
             return true;
         else
             return false;
