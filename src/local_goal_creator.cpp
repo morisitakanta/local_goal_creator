@@ -10,6 +10,7 @@ LocalGoalCreator::LocalGoalCreator() : nh_(),
     private_nh_.param("local_goal_frame_id", local_goal_frame_id_, std::string("base_link"));
 
     current_pose_updated_ = false;
+    global_path_updated_ = false;
     local_goal_index_ = 0;
 
     tf_listener_ = new tf2_ros::TransformListener(tf_buffer_);
@@ -53,11 +54,14 @@ geometry_msgs::PoseStamped LocalGoalCreator::get_local_goal(geometry_msgs::PoseS
     // ROS_INFO("get_local_goal");
     double current_local_goal_x = global_plan.poses[local_goal_index].pose.position.x;
     double current_local_goal_y = global_plan.poses[local_goal_index].pose.position.y;
-    while (pow(current_local_goal_x - current_pose.pose.position.x, 2) + pow(current_local_goal_y - current_pose.pose.position.y, 2) < pow(local_goal_dist_, 2))
+    while (reached_goal(local_goal_index, current_pose))
     {
         local_goal_index++;
         if (local_goal_index >= global_plan.poses.size())
+        {
+            local_goal_index = global_plan.poses.size() - 1;
             break;
+        }
         current_local_goal_x = global_plan.poses[local_goal_index].pose.position.x;
         current_local_goal_y = global_plan.poses[local_goal_index].pose.position.y;
     }
@@ -110,14 +114,22 @@ void LocalGoalCreator::process()
         {
             local_goal_index_ = 0;
             global_path_updated_ = false;
+            std::cout << "global path updated" << std::endl;
         }
         if (global_path_.poses.size() == 0)
+        {
+            std::cout << "global path is empty" << std::endl;
+            ros::spinOnce();
+            rate.sleep();
             continue;
+        }
         if (current_pose_updated_)
         {
+            std::cout << "current pose updated" << std::endl;
             geometry_msgs::PoseStamped local_goal = get_local_goal(current_pose_, global_path_, local_goal_index_);
             local_goal_pub_.publish(local_goal);
             current_pose_updated_ = false;
+            std::cout << "local goal published" << std::endl;
         }
         ros::spinOnce();
         rate.sleep();
