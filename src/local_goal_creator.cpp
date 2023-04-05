@@ -97,9 +97,15 @@ bool LocalGoalCreator::reached_goal(int index, geometry_msgs::PoseStamped curren
 
     double goal_x = global_path_.poses[index].pose.position.x;
     double goal_y = global_path_.poses[index].pose.position.y;
-    // double goal_yaw = tf2::getYaw(global_path.poses[index].pose.orientation);
+    double goal_roll, goal_pitch, goal_yaw;
+    tf2::Quaternion q;
+    tf2::fromMsg(global_path_.poses[index].pose.orientation, q);
+    tf2::Matrix3x3(q).getRPY(goal_roll, goal_pitch, goal_yaw);
+    double yaw = atan2(goal_y - current_pose.pose.position.y, goal_x - current_pose.pose.position.x);
 
     if (pow(current_pose.pose.position.x - goal_x, 2) + pow(current_pose.pose.position.y - goal_y, 2) < pow(local_goal_dist_, 2))
+        return true;
+    else if (fabs(yaw - goal_yaw) > M_PI / 2.0)
         return true;
     else
         return false;
@@ -115,6 +121,19 @@ void LocalGoalCreator::process()
             local_goal_index_ = 0;
             global_path_updated_ = false;
             std::cout << "global path updated" << std::endl;
+            if (current_pose_updated_)
+            {
+                double dist_min = 1e6;
+                for (int i = 0; i < global_path_.poses.size(); i++)
+                {
+                    double dist = hypot(global_path_.poses[i].pose.position.x - current_pose_.pose.position.x, global_path_.poses[i].pose.position.y - current_pose_.pose.position.y);
+                    if (dist < dist_min)
+                    {
+                        dist_min = dist;
+                        local_goal_index_ = i;
+                    }
+                }
+            }
         }
         if (global_path_.poses.size() == 0)
         {
