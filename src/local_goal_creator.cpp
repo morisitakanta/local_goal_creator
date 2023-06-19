@@ -148,6 +148,13 @@ void LocalGoalCreator::process()
             geometry_msgs::PoseStamped local_goal = get_local_goal(current_pose_, global_path_, local_goal_index_);
             local_goal_pub_.publish(local_goal);
             current_pose_updated_ = false;
+            local_goal_ = local_goal;
+            std::cout << "local goal published" << std::endl;
+        }
+        else
+        {
+            std::cout << "current pose is not updated" << std::endl;
+            local_goal_pub_.publish(local_goal_);
             std::cout << "local goal published" << std::endl;
         }
         ros::spinOnce();
