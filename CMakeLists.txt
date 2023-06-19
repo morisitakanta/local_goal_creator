@@ -4,7 +4,6 @@ project(local_goal_creator)
 find_package(catkin REQUIRED COMPONENTS
 roscpp
 rospy
-amsl_navigation_msgs
 std_msgs
 geometry_msgs
 nav_msgs
