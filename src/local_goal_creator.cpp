@@ -54,16 +54,19 @@ geometry_msgs::PoseStamped LocalGoalCreator::get_local_goal(geometry_msgs::PoseS
     // ROS_INFO("get_local_goal");
     double current_local_goal_x = global_plan.poses[local_goal_index].pose.position.x;
     double current_local_goal_y = global_plan.poses[local_goal_index].pose.position.y;
-    while (reached_goal(local_goal_index, current_pose))
+    if (current_pose_updated_)
     {
-        local_goal_index++;
-        if (local_goal_index >= global_plan.poses.size())
+        while (reached_goal(local_goal_index, current_pose))
         {
-            local_goal_index = global_plan.poses.size() - 1;
-            break;
+            local_goal_index++;
+            if (local_goal_index >= global_plan.poses.size())
+            {
+                local_goal_index = global_plan.poses.size() - 1;
+                break;
+            }
+            current_local_goal_x = global_plan.poses[local_goal_index].pose.position.x;
+            current_local_goal_y = global_plan.poses[local_goal_index].pose.position.y;
         }
-        current_local_goal_x = global_plan.poses[local_goal_index].pose.position.x;
-        current_local_goal_y = global_plan.poses[local_goal_index].pose.position.y;
     }
 
     geometry_msgs::PoseStamped local_goal;
@@ -121,19 +124,19 @@ void LocalGoalCreator::process()
             local_goal_index_ = 0;
             global_path_updated_ = false;
             std::cout << "global path updated" << std::endl;
-            if (current_pose_updated_)
-            {
-                double dist_min = 1e6;
-                for (int i = 0; i < global_path_.poses.size(); i++)
-                {
-                    double dist = hypot(global_path_.poses[i].pose.position.x - current_pose_.pose.position.x, global_path_.poses[i].pose.position.y - current_pose_.pose.position.y);
-                    if (dist < dist_min)
-                    {
-                        dist_min = dist;
-                        local_goal_index_ = i;
-                    }
-                }
-            }
+        //     if (current_pose_updated_)
+        //     {
+        //         double dist_min = 1e6;
+        //         for (int i = 0; i < global_path_.poses.size(); i++)
+        //         {
+        //             double dist = hypot(global_path_.poses[i].pose.position.x - current_pose_.pose.position.x, global_path_.poses[i].pose.position.y - current_pose_.pose.position.y);
+        //             if (dist < dist_min)
+        //             {
+        //                 dist_min = dist;
+        //                 local_goal_index_ = i;
+        //             }
+        //         }
+        //     }
         }
         if (global_path_.poses.size() == 0)
         {
@@ -142,21 +145,21 @@ void LocalGoalCreator::process()
             rate.sleep();
             continue;
         }
-        if (current_pose_updated_)
-        {
-            std::cout << "current pose updated" << std::endl;
-            geometry_msgs::PoseStamped local_goal = get_local_goal(current_pose_, global_path_, local_goal_index_);
-            local_goal_pub_.publish(local_goal);
-            current_pose_updated_ = false;
-            local_goal_ = local_goal;
-            std::cout << "local goal published" << std::endl;
-        }
-        else
-        {
-            std::cout << "current pose is not updated" << std::endl;
-            local_goal_pub_.publish(local_goal_);
-            std::cout << "local goal published" << std::endl;
-        }
+        // if (current_pose_updated_)
+        // {
+        // std::cout << "current pose updated" << std::endl;
+        geometry_msgs::PoseStamped local_goal = get_local_goal(current_pose_, global_path_, local_goal_index_);
+        local_goal_pub_.publish(local_goal);
+        current_pose_updated_ = false;
+        local_goal_ = local_goal;
+        std::cout << "local goal published" << std::endl;
+        // }
+        // else
+        // {
+        //     std::cout << "current pose is not updated" << std::endl;
+        //     local_goal_pub_.publish(local_goal_);
+        //     std::cout << "local goal published" << std::endl;
+        // }
         ros::spinOnce();
         rate.sleep();
     }
