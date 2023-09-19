@@ -108,8 +108,8 @@ bool LocalGoalCreator::reached_goal(int index, geometry_msgs::PoseStamped curren
 
     if (pow(current_pose.pose.position.x - goal_x, 2) + pow(current_pose.pose.position.y - goal_y, 2) < pow(local_goal_dist_, 2))
         return true;
-    else if (fabs(yaw - goal_yaw) > M_PI / 2.0)
-        return true;
+    // else if (fabs(yaw - goal_yaw) > M_PI / 2.0)
+    //     return true;
     else
         return false;
 }
